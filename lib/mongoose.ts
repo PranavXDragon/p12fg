@@ -32,8 +32,7 @@ async function dbConnect() {
       connectTimeoutMS: 15000,
       family: 4,
       retryWrites: true,
-      compressors: ["snappy"],
-    };
+    } as any;
 
     cached.mongoose.promise = mongoose
       .connect(MONGODB_URI as string, opts)
