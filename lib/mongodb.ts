@@ -1,10 +1,6 @@
 import mongoose from "mongoose";
 
-const MONGODB_URI = process.env.MONGODB_URI as string;
-
-if (!MONGODB_URI) {
-  throw new Error("Please define the MONGODB_URI environment variable");
-}
+const MONGODB_URI = process.env.MONGODB_URI;
 
 interface Cached {
   conn: typeof mongoose | null;
@@ -14,6 +10,10 @@ interface Cached {
 let cached: Cached = (global as any).mongoose || { conn: null, promise: null };
 
 async function dbConnect() {
+  if (!MONGODB_URI) {
+    throw new Error("MONGODB_URI environment variable is not defined");
+  }
+
   if (cached.conn) {
     return cached.conn;
   }
