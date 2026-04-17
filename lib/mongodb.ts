@@ -1,8 +1,4 @@
 import mongoose from "mongoose";
-import dns from "dns";
-
-// Configure DNS to prefer IPv4
-dns.setDefaultResultOrder("ipv4first");
 
 const MONGODB_URI = process.env.MONGODB_URI;
 
@@ -10,16 +6,35 @@ if (!MONGODB_URI) {
   throw new Error("Please define the MONGODB_URI environment variable");
 }
 
-let cached = (global as any).mongoose || { conn: null, promise: null };
-
-if (!cached.conn) {
-  cached.promise =
-    cached.promise ||
-    mongoose.connect(MONGODB_URI, {
-      bufferCommands: false,
-      maxPoolSize: 10,
-      minPoolSize: 2,
-    });
+interface Cached {
+  conn: typeof mongoose | null;
+  promise: Promise<typeof mongoose> | null;
 }
 
-export default cached.promise;
+let cached: Cached = (global as any).mongoose || { conn: null, promise: null };
+
+async function dbConnect() {
+  if (cached.conn) {
+    return cached.conn;
+  }
+
+  if (!cached.promise) {
+    cached.promise = mongoose
+      .connect(MONGODB_URI, {
+        bufferCommands: false,
+        maxPoolSize: 10,
+        minPoolSize: 2,
+      })
+      .then((mongoose) => {
+        cached.conn = mongoose;
+        return mongoose;
+      });
+  }
+
+  cached.conn = await cached.promise;
+  return cached.conn;
+}
+
+(global as any).mongoose = cached;
+
+export default dbConnect;

@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create a new form document
-    const formData = new (await import("@/models/Form")).default({
+    const formData = new Form({
       name,
       email,
       phone,
@@ -53,7 +53,6 @@ export async function GET() {
   try {
     await dbConnect();
 
-    const Form = (await import("@/models/Form")).default;
     const forms = await Form.find().sort({ createdAt: -1 }).limit(100);
 
     return NextResponse.json({ data: forms }, { status: 200 });
