@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface FormData {
   name: string;
@@ -11,9 +11,15 @@ interface FormData {
   skills: string;
 }
 
-interface SubmittedForm extends FormData {
-  id: string;
-  submittedAt: string;
+interface SubmittedForm {
+  _id: string;
+  name: string;
+  email: string;
+  phone: string;
+  branch: string;
+  education: string;
+  skills: string[];
+  createdAt: string;
 }
 
 export default function FormComponent() {
@@ -28,6 +34,28 @@ export default function FormComponent() {
 
   const [submittedForms, setSubmittedForms] = useState<SubmittedForm[]>([]);
   const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [loadingForms, setLoadingForms] = useState(true);
+
+  // Fetch submitted forms on component mount
+  useEffect(() => {
+    fetchForms();
+  }, []);
+
+  const fetchForms = async () => {
+    try {
+      setLoadingForms(true);
+      const response = await fetch("/api/forms");
+      if (response.ok) {
+        const data = await response.json();
+        setSubmittedForms(data.data || []);
+      }
+    } catch (err) {
+      console.error("Error fetching forms:", err);
+    } finally {
+      setLoadingForms(false);
+    }
+  };
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -39,8 +67,9 @@ export default function FormComponent() {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setLoading(true);
 
     // Validate required fields
     if (
@@ -52,6 +81,7 @@ export default function FormComponent() {
       !formData.skills
     ) {
       setMessage("❌ Please fill out all fields");
+      setLoading(false);
       setTimeout(() => setMessage(""), 3000);
       return;
     }
@@ -60,32 +90,57 @@ export default function FormComponent() {
     const emailRegex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
     if (!emailRegex.test(formData.email)) {
       setMessage("❌ Please enter a valid email");
+      setLoading(false);
       setTimeout(() => setMessage(""), 3000);
       return;
     }
 
-    // Add submitted form to list
-    const newSubmission: SubmittedForm = {
-      ...formData,
-      id: Date.now().toString(),
-      submittedAt: new Date().toLocaleString(),
-    };
+    try {
+      const skillsArray = formData.skills
+        .split(",")
+        .map((skill) => skill.trim())
+        .filter((skill) => skill !== "");
 
-    setSubmittedForms((prev) => [newSubmission, ...prev]);
-    setMessage("✓ Form submitted successfully!");
+      const response = await fetch("/api/forms", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ...formData,
+          skills: skillsArray,
+        }),
+      });
 
-    // Reset form
-    setFormData({
-      name: "",
-      email: "",
-      phone: "",
-      branch: "",
-      education: "",
-      skills: "",
-    });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to submit form");
+      }
 
-    // Clear message after 3 seconds
-    setTimeout(() => setMessage(""), 3000);
+      setMessage("✓ Form submitted successfully!");
+
+      // Reset form
+      setFormData({
+        name: "",
+        email: "",
+        phone: "",
+        branch: "",
+        education: "",
+        skills: "",
+      });
+
+      // Refresh forms list
+      await fetchForms();
+
+      // Clear message after 3 seconds
+      setTimeout(() => setMessage(""), 3000);
+    } catch (err: any) {
+      setMessage(`❌ ${err.message || "Error submitting form"}`);
+      setTimeout(() => setMessage(""), 3000);
+      console.error("Form submission error:", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -240,9 +295,10 @@ export default function FormComponent() {
               {/* Submit Button */}
               <button
                 type="submit"
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-200"
+                disabled={loading}
+                className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-bold py-3 rounded-lg transition duration-200"
               >
-                Submit Application
+                {loading ? "Submitting..." : "Submit Application"}
               </button>
             </form>
           </div>
@@ -255,22 +311,24 @@ export default function FormComponent() {
               Submissions ({submittedForms.length})
             </h2>
 
-            {submittedForms.length === 0 ? (
+            {loadingForms ? (
+              <p className="text-gray-500 text-center py-8">Loading...</p>
+            ) : submittedForms.length === 0 ? (
               <p className="text-gray-500 text-center py-8">
                 No submissions yet
               </p>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-4 max-h-96 overflow-y-auto">
                 {submittedForms.map((form) => (
                   <div
-                    key={form.id}
+                    key={form._id}
                     className="border border-gray-200 rounded-lg p-4 bg-gray-50"
                   >
                     <p className="font-semibold text-gray-800">{form.name}</p>
                     <p className="text-sm text-gray-600">{form.email}</p>
                     <p className="text-sm text-gray-600">{form.phone}</p>
                     <p className="text-xs text-gray-500 mt-2">
-                      {form.submittedAt}
+                      {new Date(form.createdAt).toLocaleString()}
                     </p>
                   </div>
                 ))}
