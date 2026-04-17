@@ -1,36 +1,183 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Form Application with Next.js and MongoDB
 
-## Getting Started
+A modern web application built with Next.js, featuring a form that collects user information (name, email, phone, branch, education level, and skills) and stores it in a MongoDB database.
 
-First, run the development server:
+## Features
+
+- **Next.js 16+** with TypeScript
+- **MongoDB** integration using Mongoose ODM
+- **Server-side API** for form submissions
+- **Client-side validation** and error handling
+- **Tailwind CSS** for styling
+- **Responsive design** with mobile support
+
+## Prerequisites
+
+Before you start, make sure you have:
+- Node.js (v18 or higher)
+- npm or yarn
+- A MongoDB cluster (MongoDB Atlas or local MongoDB)
+
+## Setup Instructions
+
+### 1. Clone and Install Dependencies
+
+```bash
+npm install
+```
+
+### 2. MongoDB Setup
+
+1. **Create a MongoDB Cluster:**
+   - Go to [MongoDB Atlas](https://www.mongodb.com/cloud/atlas)
+   - Create a free account
+   - Create a new cluster
+   - Create a database user with username and password
+
+2. **Get Connection String:**
+   - In MongoDB Atlas, click "Connect" on your cluster
+   - Choose "Drivers" → "Node.js"
+   - Copy the connection string
+
+3. **Configure Environment Variables:**
+   - Open `.env.local` file
+   - Replace `username` and `password` with your MongoDB credentials
+   - Replace `cluster0` with your actual cluster name
+   - Example:
+     ```
+     MONGODB_URI=mongodb+srv://myuser:mypassword@mycluster.mongodb.net/formdb?retryWrites=true&w=majority
+     ```
+
+### 3. Run the Application
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The application will start on [http://localhost:3000](http://localhost:3000)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Project Structure
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+├── app/
+│   ├── api/
+│   │   └── forms/
+│   │       └── route.ts          # API route for form submissions
+│   ├── page.tsx                  # Home page
+│   └── layout.tsx
+├── components/
+│   └── FormComponent.tsx         # Main form component
+├── lib/
+│   └── mongoose.ts               # MongoDB connection logic
+├── models/
+│   └── Form.ts                   # Mongoose form schema
+├── .env.local                    # Environment variables
+└── package.json
+```
 
-## Learn More
+## Form Fields
 
-To learn more about Next.js, take a look at the following resources:
+- **Name**: User's full name (required)
+- **Email**: Valid email address (required)
+- **Phone**: Phone number (required)
+- **Branch**: Engineering branch (CS, Electronics, Mechanical, Civil, Electrical)
+- **Education**: Education level (Bachelor, Master, Diploma, High School)
+- **Skills**: Comma-separated list of skills (required)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## API Endpoints
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### POST /api/forms
+Submit a new form entry
 
-## Deploy on Vercel
+**Request:**
+```json
+{
+  "name": "John Doe",
+  "email": "john@example.com",
+  "phone": "+1234567890",
+  "branch": "Computer Science",
+  "education": "Bachelor",
+  "skills": ["JavaScript", "React", "Node.js"]
+}
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+**Response:**
+```json
+{
+  "message": "Form submitted successfully",
+  "data": {
+    "_id": "...",
+    "name": "John Doe",
+    "email": "john@example.com",
+    "createdAt": "2024-04-18T10:00:00.000Z"
+  }
+}
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### GET /api/forms
+Retrieve all submitted forms
+
+**Response:**
+```json
+{
+  "data": [
+    {
+      "_id": "...",
+      "name": "John Doe",
+      "email": "john@example.com",
+      "phone": "+1234567890",
+      "branch": "Computer Science",
+      "education": "Bachelor",
+      "skills": ["JavaScript", "React", "Node.js"],
+      "createdAt": "2024-04-18T10:00:00.000Z"
+    }
+  ]
+}
+```
+
+## Development
+
+### Build for Production
+
+```bash
+npm run build
+```
+
+### Start Production Server
+
+```bash
+npm start
+```
+
+### Lint Code
+
+```bash
+npm run lint
+```
+
+## Troubleshooting
+
+### MongoDB Connection Error
+- Verify your connection string in `.env.local`
+- Ensure your MongoDB cluster is running
+- Check if your IP address is whitelisted in MongoDB Atlas (Network Access)
+- Make sure the database user has proper permissions
+
+### Form Submission Errors
+- Check browser console for error messages
+- Verify all required fields are filled
+- Check email format validation
+- Ensure MongoDB is connected before submitting
+
+## Technologies Used
+
+- **Next.js** - React framework for production
+- **TypeScript** - Type-safe JavaScript
+- **MongoDB** - NoSQL database
+- **Mongoose** - MongoDB ODM for Node.js
+- **Tailwind CSS** - Utility-first CSS framework
+- **React Hooks** - For form state management
+
+## License
+
+MIT
